@@ -11,7 +11,24 @@
     <header>
         <div class="balance">
             <span id="coins">0</span>
-            <span class="coin-icon">🏛️</span>
+            <svg class="coin-icon-svg" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <radialGradient id="cGrad" cx="35%" cy="30%" r="70%">
+                        <stop offset="0%" stop-color="#fff3a0"/>
+                        <stop offset="45%" stop-color="#ffd93b"/>
+                        <stop offset="100%" stop-color="#c99400"/>
+                    </radialGradient>
+                    <linearGradient id="cRim" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#b8860b"/>
+                        <stop offset="100%" stop-color="#8b6508"/>
+                    </linearGradient>
+                </defs>
+                <circle cx="32" cy="32" r="30" fill="url(#cRim)"/>
+                <circle cx="32" cy="32" r="26" fill="url(#cGrad)"/>
+                <circle cx="32" cy="32" r="22" fill="none" stroke="#b8860b" stroke-width="1.5" opacity="0.4"/>
+                <text x="32" y="42" text-anchor="middle" font-size="26" font-weight="900" fill="#8b6508" font-family="Arial">G</text>
+                <ellipse cx="24" cy="20" rx="8" ry="4" fill="#fff" opacity="0.5"/>
+            </svg>
         </div>
         <div class="stats">
             <div>⚡ <span id="energy">1000</span>/<span id="maxEnergy">1000</span></div>
@@ -21,7 +38,26 @@
 
     <main>
         <button id="tapButton">
-            <div class="coin-big">🏛️</div>
+            <svg class="coin-big-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <radialGradient id="bigGrad" cx="35%" cy="30%" r="70%">
+                        <stop offset="0%" stop-color="#fff8c0"/>
+                        <stop offset="40%" stop-color="#ffd93b"/>
+                        <stop offset="100%" stop-color="#a87b00"/>
+                    </radialGradient>
+                    <linearGradient id="bigRim" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#d4a017"/>
+                        <stop offset="100%" stop-color="#6b4e00"/>
+                    </linearGradient>
+                </defs>
+                <circle cx="100" cy="100" r="92" fill="url(#bigRim)"/>
+                <circle cx="100" cy="100" r="82" fill="url(#bigGrad)"/>
+                <circle cx="100" cy="100" r="68" fill="none" stroke="#8b6508" stroke-width="3" opacity="0.5"/>
+                <circle cx="100" cy="100" r="60" fill="none" stroke="#8b6508" stroke-width="1" opacity="0.3"/>
+                <text x="100" y="128" text-anchor="middle" font-size="90" font-weight="900" fill="#8b6508" font-family="Arial" opacity="0.85">G</text>
+                <ellipse cx="75" cy="60" rx="25" ry="12" fill="#fff" opacity="0.5"/>
+                <ellipse cx="68" cy="55" rx="10" ry="5" fill="#fff" opacity="0.8"/>
+            </svg>
             <div class="tap-hint">ТАПАЙ</div>
         </button>
     </main>
