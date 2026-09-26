@@ -8,9 +8,13 @@ body {
     overflow-x: hidden;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
+    padding: 16px;
 }
 
-#app { max-width: 480px; margin: 0 auto; padding: 16px; }
+#app {
+    max-width: 480px;
+    margin: 0 auto;
+}
 
 header {
     background: rgba(255,255,255,.05);
@@ -18,24 +22,26 @@ header {
     border-radius: 16px;
     padding: 16px;
     margin-bottom: 16px;
+    text-align: center;
 }
 
 .balance {
-    font-size: 32px;
+    font-size: 36px;
     font-weight: 700;
-    text-align: center;
     color: #ffd700;
     margin-bottom: 8px;
     text-shadow: 0 0 20px rgba(255,215,0,.3);
 }
 
-.coin-icon { font-size: 28px; }
+.coin-icon { font-size: 30px; }
 
 .stats {
     display: flex;
     justify-content: space-around;
     font-size: 13px;
     color: #aaa;
+    flex-wrap: wrap;
+    gap: 8px;
 }
 
 main {
@@ -45,8 +51,8 @@ main {
 }
 
 #tapButton {
-    width: 240px;
-    height: 240px;
+    width: min(65vw, 240px);
+    height: min(65vw, 240px);
     border-radius: 50%;
     background: radial-gradient(circle at 30% 30%, #4a4a8a, #1a1a3a);
     border: 4px solid #5b5bff;
@@ -57,6 +63,10 @@ main {
     justify-content: center;
     transition: transform .08s, box-shadow .2s;
     box-shadow: 0 0 40px rgba(91,91,255,.4), inset 0 0 40px rgba(91,91,255,.2);
+    -webkit-appearance: none;
+    appearance: none;
+    color: inherit;
+    font-family: inherit;
 }
 
 #tapButton:active {
@@ -65,13 +75,14 @@ main {
 }
 
 .coin-big {
-    font-size: 100px;
+    font-size: clamp(60px, 20vw, 100px);
     filter: drop-shadow(0 0 20px rgba(255,215,0,.8));
     pointer-events: none;
+    line-height: 1;
 }
 
 .tap-hint {
-    font-size: 12px;
+    font-size: clamp(10px, 2.5vw, 12px);
     letter-spacing: 3px;
     color: #aaa;
     margin-top: 4px;
@@ -97,6 +108,7 @@ main {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 8px;
     padding: 12px;
     background: rgba(255,255,255,.03);
     border: 1px solid rgba(255,255,255,.08);
@@ -106,10 +118,9 @@ main {
 }
 
 .upgrade:hover { background: rgba(255,255,255,.06); }
-
 .upgrade.disabled { opacity: .4; }
 
-.upgrade-info { flex: 1; }
+.upgrade-info { flex: 1; min-width: 0; }
 .upgrade-name { font-size: 14px; font-weight: 600; }
 .upgrade-desc { font-size: 11px; color: #888; margin-top: 2px; }
 
@@ -123,6 +134,10 @@ main {
     font-size: 12px;
     cursor: pointer;
     white-space: nowrap;
+    flex-shrink: 0;
+    -webkit-appearance: none;
+    appearance: none;
+    font-family: inherit;
 }
 
 .upgrade-buy:active { transform: scale(.95); }
@@ -130,9 +145,10 @@ main {
 .floating {
     position: fixed;
     pointer-events: none;
-    font-size: 24px;
+    font-size: 26px;
     font-weight: 700;
     color: #ffd700;
+    text-shadow: 0 0 12px rgba(255,215,0,.8);
     animation: floatUp 1s ease-out forwards;
     z-index: 999;
 }
@@ -140,4 +156,138 @@ main {
 @keyframes floatUp {
     0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
     100% { transform: translate(-50%, -150%) scale(1.5); opacity: 0; }
+}
+
+/* ============ МОДАЛКА ЭНЕРГИИ ============ */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.85);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+}
+
+.modal-overlay.show { display: flex; }
+
+.modal {
+    background: linear-gradient(180deg, #1e1e2e 0%, #15151f 100%);
+    border: 1px solid rgba(255,255,255,.15);
+    border-radius: 20px;
+    padding: 24px;
+    width: 100%;
+    max-width: 340px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,.8);
+}
+
+.modal-icon {
+    font-size: 60px;
+    margin-bottom: 8px;
+    filter: drop-shadow(0 0 20px rgba(255,215,0,.6));
+    animation: boltShake 1.5s infinite;
+}
+
+@keyframes boltShake {
+    0%, 90%, 100% { transform: rotate(0); }
+    92% { transform: rotate(-8deg); }
+    94% { transform: rotate(8deg); }
+    96% { transform: rotate(-5deg); }
+    98% { transform: rotate(5deg); }
+}
+
+.modal h3 {
+    font-size: 20px;
+    color: #fff;
+    margin-bottom: 10px;
+}
+
+.modal p {
+    font-size: 13px;
+    color: #999;
+    line-height: 1.5;
+    margin-bottom: 20px;
+}
+
+.modal-btn-primary {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    border: none;
+    border-radius: 12px;
+    color: #fff;
+    font-weight: 800;
+    font-size: 15px;
+    cursor: pointer;
+    margin-bottom: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    box-shadow: 0 6px 20px rgba(245,158,11,.35);
+    -webkit-appearance: none;
+    appearance: none;
+    font-family: inherit;
+}
+
+.modal-btn-primary:active { transform: scale(.97); }
+
+.modal-btn-sub {
+    font-size: 11px;
+    font-weight: 500;
+    opacity: .85;
+}
+
+.modal-btn-secondary {
+    width: 100%;
+    padding: 12px;
+    background: rgba(255,255,255,.05);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 12px;
+    color: #aaa;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    margin-bottom: 12px;
+    -webkit-appearance: none;
+    appearance: none;
+    font-family: inherit;
+}
+
+.modal-btn-secondary:active { transform: scale(.97); }
+
+.modal-timer {
+    font-size: 11px;
+    color: #666;
+}
+
+/* ============ АДАПТИВ ДЛЯ УЗКИХ ЭКРАНОВ ============ */
+@media (max-width: 400px) {
+    body { padding: 10px; }
+
+    .balance { font-size: 28px; }
+    .coin-icon { font-size: 24px; }
+    .stats { font-size: 11px; }
+
+    #tapButton {
+        width: min(70vw, 200px);
+        height: min(70vw, 200px);
+    }
+
+    .coin-big { font-size: clamp(60px, 22vw, 80px); }
+
+    #upgrades { padding: 12px; }
+    #upgrades h2 { font-size: 14px; }
+
+    .upgrade { padding: 10px; }
+    .upgrade-name { font-size: 12px; }
+    .upgrade-desc { font-size: 10px; }
+    .upgrade-buy { font-size: 11px; padding: 7px 10px; }
+
+    .modal { padding: 18px; }
+    .modal-icon { font-size: 48px; }
+    .modal h3 { font-size: 17px; }
+    .modal p { font-size: 12px; }
 }
