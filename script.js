@@ -16,7 +16,7 @@ const UPGRADES = [
     {
         id: 'clickPower',
         name: '💪 Сила клика',
-        desc: '+1 к клику',
+        desc: '+1 монета за клик',
         baseCost: 100,
         costMult: 1.5,
         maxLevel: 100,
@@ -24,7 +24,7 @@ const UPGRADES = [
     },
     {
         id: 'maxEnergy',
-        name: '⚡ Энергия',
+        name: '⚡ Резерв энергии',
         desc: '+500 к максимуму',
         baseCost: 200,
         costMult: 1.6,
@@ -34,7 +34,7 @@ const UPGRADES = [
     {
         id: 'autoClick',
         name: '🤖 Автоклик',
-        desc: '+1 клик/сек',
+        desc: '+1 монета в секунду',
         baseCost: 500,
         costMult: 1.8,
         maxLevel: 100,
@@ -42,7 +42,10 @@ const UPGRADES = [
     }
 ];
 
-// ============ ЗАГРУЗКА/СОХРАНЕНИЕ ============
+// ============ НАСТРОЙКИ БАЛАНСА ============
+const ENERGY_REGEN_SEC = 30;   // 1 энергия за 30 секунд
+
+// ============ СОХРАНЕНИЕ ============
 function save() {
     localStorage.setItem('kc_clicker', JSON.stringify(state));
 }
@@ -60,7 +63,7 @@ function getUpgradeCost(up) {
     return Math.floor(up.baseCost * Math.pow(up.costMult, level));
 }
 
-// ============ ПОКУПКА УЛУЧШЕНИЯ ============
+// ============ ПОКУПКА ============
 function buyUpgrade(up) {
     const cost = getUpgradeCost(up);
     const level = state.upgrades[up.id] || 0;
@@ -98,7 +101,7 @@ function render() {
                 <div class="upgrade-name">${up.name} (ур. ${level})</div>
                 <div class="upgrade-desc">${up.desc}</div>
             </div>
-            <button class="upgrade-buy">${level >= up.maxLevel ? 'MAX' : formatNumber(cost) + ' 🪙'}</button>
+            <button class="upgrade-buy">${level >= up.maxLevel ? 'MAX' : formatNumber(cost) + ' G'}</button>
         `;
 
         if (canBuy) {
@@ -118,14 +121,16 @@ function formatNumber(n) {
     return (n / 1e12).toFixed(1) + 'T';
 }
 
-// ============ КЛИК ПО КНОПКЕ ============
+// ============ КЛИК ============
 function tap(e) {
-    if (state.energy < 1) return;
+    if (state.energy < 1) {
+        showEnergyModal();
+        return;
+    }
 
     state.energy -= 1;
     state.coins += state.clickPower;
 
-    // Всплывающее число
     const float = document.createElement('div');
     float.className = 'floating';
     float.textContent = '+' + state.clickPower;
@@ -139,19 +144,74 @@ function tap(e) {
     render();
 }
 
+// ============ МОДАЛКА ЭНЕРГИИ ============
+function showEnergyModal() {
+    document.getElementById('energyModal').classList.add('show');
+    updateRegenTimer();
+}
+
+function hideEnergyModal() {
+    document.getElementById('energyModal').classList.remove('show');
+}
+
+document.getElementById('watchAdBtn').onclick = () => {
+    // TODO: здесь будет AdsGram SDK
+    state.energy = state.maxEnergy;
+    save();
+    render();
+    hideEnergyModal();
+    alert('Энергия восстановлена! (Позже здесь будет настоящая реклама)');
+};
+
+document.getElementById('closeModalBtn').onclick = hideEnergyModal;
+
+document.getElementById('energyModal').addEventListener('click', (e) => {
+    if (e.target.id === 'energyModal') hideEnergyModal();
+});
+
+// ============ ТАЙМЕР ДО СЛЕДУЮЩЕЙ ЭНЕРГИИ ============
+let lastRegenTime = Date.now();
+
+function updateRegenTimer() {
+    const el = document.getElementById('regenTimer');
+    if (!el) return;
+
+    if (state.energy >= state.maxEnergy) {
+        el.textContent = '—';
+        return;
+    }
+
+    const elapsed = (Date.now() - lastRegenTime) / 1000;
+    const remaining = Math.max(0, Math.ceil(ENERGY_REGEN_SEC - elapsed));
+    el.textContent = remaining + 'с';
+}
+
+// ============ ВОССТАНОВЛЕНИЕ ЭНЕРГИИ ============
+// 1 энергия за ENERGY_REGEN_SEC секунд (по умолчанию 30с)
+setInterval(() => {
+    if (state.energy >= state.maxEnergy) {
+        lastRegenTime = Date.now();
+        return;
+    }
+
+    const elapsed = (Date.now() - lastRegenTime) / 1000;
+
+    if (elapsed >= ENERGY_REGEN_SEC) {
+        const gain = Math.floor(elapsed / ENERGY_REGEN_SEC);
+        state.energy = Math.min(state.maxEnergy, state.energy + gain);
+        lastRegenTime = Date.now();
+        save();
+        render();
+    }
+
+    updateRegenTimer();
+}, 500);
+
 // ============ АВТОКЛИК ============
 setInterval(() => {
     const level = state.upgrades.autoClick || 0;
     if (level > 0) {
         state.coins += level;
-        render();
-    }
-}, 1000);
-
-// ============ ВОССТАНОВЛЕНИЕ ЭНЕРГИИ ============
-setInterval(() => {
-    if (state.energy < state.maxEnergy) {
-        state.energy = Math.min(state.maxEnergy, state.energy + 10);
         render();
     }
 }, 1000);
@@ -163,3 +223,4 @@ setInterval(save, 5000);
 load();
 render();
 document.getElementById('tapButton').addEventListener('click', tap);
+updateRegenTimer();
