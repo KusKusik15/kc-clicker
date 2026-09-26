@@ -1,222 +1,250 @@
-// ============ СОСТОЯНИЕ ИГРЫ ============
-const state = {
-    coins: 0,
-    clickPower: 1,
-    maxEnergy: 1000,
-    energy: 1000,
-    upgrades: {
-        clickPower: 0,
-        maxEnergy: 0,
-        autoClick: 0
-    }
-};
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
-// ============ СПИСОК УЛУЧШЕНИЙ ============
-const UPGRADES = [
-    {
-        id: 'clickPower',
-        name: '💪 Сила клика',
-        desc: '+1 монета за клик',
-        baseCost: 100,
-        costMult: 1.5,
-        maxLevel: 100,
-        apply: (s) => s.clickPower += 1
-    },
-    {
-        id: 'maxEnergy',
-        name: '⚡ Резерв энергии',
-        desc: '+500 к максимуму',
-        baseCost: 200,
-        costMult: 1.6,
-        maxLevel: 50,
-        apply: (s) => { s.maxEnergy += 500; s.energy += 500; }
-    },
-    {
-        id: 'autoClick',
-        name: '🤖 Автоклик',
-        desc: '+1 монета в секунду',
-        baseCost: 500,
-        costMult: 1.8,
-        maxLevel: 100,
-        apply: () => {}
-    }
-];
-
-// ============ НАСТРОЙКИ БАЛАНСА ============
-const ENERGY_REGEN_SEC = 30;        // 1 энергия за 30 секунд
-const ENERGY_REGEN_TICK_MS = 1000;  // обновление раз в секунду
-
-// ============ СОХРАНЕНИЕ ============
-function save() {
-    localStorage.setItem('kc_clicker', JSON.stringify(state));
+html, body {
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
 }
 
-function load() {
-    const data = localStorage.getItem('kc_clicker');
-    if (data) {
-        try { Object.assign(state, JSON.parse(data)); } catch {}
-    }
+body {
+    font-family: -apple-system, 'Segoe UI', Arial, sans-serif;
+    background: linear-gradient(180deg, #1a1a2e 0%, #0f0f1a 100%);
+    color: #fff;
+    min-height: 100vh;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
 }
 
-// ============ ЦЕНА УЛУЧШЕНИЯ ============
-function getUpgradeCost(up) {
-    const level = state.upgrades[up.id] || 0;
-    return Math.floor(up.baseCost * Math.pow(up.costMult, level));
+#app {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: clamp(10px, 3vw, 16px);
 }
 
-// ============ ПОКУПКА ============
-function buyUpgrade(up) {
-    const cost = getUpgradeCost(up);
-    const level = state.upgrades[up.id] || 0;
-
-    if (level >= up.maxLevel) return;
-    if (state.coins < cost) return;
-
-    state.coins -= cost;
-    state.upgrades[up.id] = level + 1;
-    up.apply(state);
-
-    save();
-    render();
+header {
+    background: rgba(255,255,255,.05);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 16px;
+    padding: clamp(12px, 3.5vw, 16px);
+    margin-bottom: clamp(12px, 3vw, 16px);
 }
 
-// ============ РЕНДЕР ============
-function render() {
-    document.getElementById('coins').textContent = formatNumber(state.coins);
-    document.getElementById('energy').textContent = Math.floor(state.energy);
-    document.getElementById('maxEnergy').textContent = state.maxEnergy;
-    document.getElementById('clickPower').textContent = state.clickPower;
-
-    const list = document.getElementById('upgradesList');
-    list.innerHTML = '';
-
-    for (const up of UPGRADES) {
-        const level = state.upgrades[up.id] || 0;
-        const cost = getUpgradeCost(up);
-        const canBuy = state.coins >= cost && level < up.maxLevel;
-
-        const el = document.createElement('div');
-        el.className = 'upgrade' + (canBuy ? '' : ' disabled');
-        el.innerHTML = `
-            <div class="upgrade-info">
-                <div class="upgrade-name">${up.name} (ур. ${level})</div>
-                <div class="upgrade-desc">${up.desc}</div>
-            </div>
-            <button class="upgrade-buy">${level >= up.maxLevel ? 'MAX' : formatNumber(cost) + ' 🪙'}</button>
-        `;
-
-        if (canBuy) {
-            el.querySelector('.upgrade-buy').onclick = () => buyUpgrade(up);
-        }
-
-        list.appendChild(el);
-    }
+.balance {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: clamp(24px, 8vw, 34px);
+    font-weight: 800;
+    color: #ffd700;
+    margin-bottom: 8px;
+    text-shadow: 0 0 20px rgba(255,215,0,.4);
 }
 
-// ============ ФОРМАТ ЧИСЕЛ ============
-function formatNumber(n) {
-    if (n < 1000) return Math.floor(n).toString();
-    if (n < 1e6) return (n / 1e3).toFixed(1) + 'K';
-    if (n < 1e9) return (n / 1e6).toFixed(1) + 'M';
-    if (n < 1e12) return (n / 1e9).toFixed(1) + 'B';
-    return (n / 1e12).toFixed(1) + 'T';
+.coin-icon { font-size: clamp(20px, 6vw, 28px); }
+
+.stats {
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    gap: 6px;
+    font-size: clamp(11px, 3vw, 13px);
+    color: #aaa;
 }
 
-// ============ КЛИК ============
-function tap(e) {
-    if (state.energy < 1) {
-        showEnergyModal();
-        return;
-    }
-
-    state.energy -= 1;
-    state.coins += state.clickPower;
-
-    const float = document.createElement('div');
-    float.className = 'floating';
-    float.textContent = '+' + state.clickPower;
-    const rect = e.currentTarget.getBoundingClientRect();
-    float.style.left = (e.clientX || rect.left + rect.width / 2) + 'px';
-    float.style.top = (e.clientY || rect.top + rect.height / 2) + 'px';
-    document.body.appendChild(float);
-    setTimeout(() => float.remove(), 1000);
-
-    save();
-    render();
+main {
+    display: flex;
+    justify-content: center;
+    margin: clamp(12px, 4vw, 24px) 0;
 }
 
-// ============ МОДАЛКА ЭНЕРГИИ ============
-function showEnergyModal() {
-    document.getElementById('energyModal').classList.add('show');
+#tapButton {
+    width: min(65vw, 240px);
+    height: min(65vw, 240px);
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #4a4a8a, #1a1a3a);
+    border: 3px solid #5b5bff;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: transform .08s, box-shadow .2s;
+    box-shadow: 0 0 40px rgba(91,91,255,.4), inset 0 0 40px rgba(91,91,255,.2);
 }
 
-function hideEnergyModal() {
-    document.getElementById('energyModal').classList.remove('show');
+#tapButton:active {
+    transform: scale(.95);
+    box-shadow: 0 0 60px rgba(255,215,0,.6);
 }
 
-// Кнопка "Смотреть рекламу" (пока заглушка — потом AdsGram)
-document.getElementById('watchAdBtn').onclick = () => {
-    // TODO: здесь будет вызов AdsGram SDK
-    // Временная имитация: восстановить полную энергию
-    state.energy = state.maxEnergy;
-    save();
-    render();
-    hideEnergyModal();
-    alert('✅ Энергия восстановлена!\n\n(Позже здесь будет настоящая реклама)');
-};
-
-document.getElementById('closeModalBtn').onclick = hideEnergyModal;
-
-// Закрытие по клику вне окна
-document.getElementById('energyModal').addEventListener('click', (e) => {
-    if (e.target.id === 'energyModal') hideEnergyModal();
-});
-
-// ============ ТАЙМЕР ДО СЛЕДУЮЩЕЙ ЭНЕРГИИ ============
-let regenAccumulator = 0;
-
-function updateRegenTimer() {
-    if (state.energy >= state.maxEnergy) {
-        document.getElementById('regenTimer').textContent = 'полная';
-        return;
-    }
-    const remaining = Math.ceil(ENERGY_REGEN_SEC - regenAccumulator);
-    document.getElementById('regenTimer').textContent = remaining + 'с';
+.coin-big {
+    font-size: clamp(60px, 20vw, 100px);
+    filter: drop-shadow(0 0 20px rgba(255,215,0,.8));
+    pointer-events: none;
+    line-height: 1;
 }
 
-// ============ ВОССТАНОВЛЕНИЕ ЭНЕРГИИ ============
-// 1 энергия за ENERGY_REGEN_SEC секунд (по умолчанию 30 сек)
-setInterval(() => {
-    if (state.energy >= state.maxEnergy) {
-        regenAccumulator = 0;
-        return;
-    }
+.tap-hint {
+    font-size: clamp(10px, 2.5vw, 12px);
+    letter-spacing: 3px;
+    color: #aaa;
+    margin-top: 4px;
+    pointer-events: none;
+}
 
-    regenAccumulator += 1;
-    updateRegenTimer();
+#upgrades {
+    background: rgba(255,255,255,.03);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 16px;
+    padding: clamp(12px, 3.5vw, 16px);
+}
 
-    if (regenAccumulator >= ENERGY_REGEN_SEC) {
-        state.energy = Math.min(state.maxEnergy, state.energy + 1);
-        regenAccumulator = 0;
-        save();
-        render();
-    }
-}, ENERGY_REGEN_TICK_MS);
+#upgrades h2 {
+    font-size: clamp(13px, 4vw, 15px);
+    margin-bottom: 12px;
+    color: #aaa;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
 
-// ============ АВТОКЛИК ============
-setInterval(() => {
-    const level = state.upgrades.autoClick || 0;
-    if (level > 0) {
-        state.coins += level;
-        render();
-    }
-}, 1000);
+.upgrade {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    padding: clamp(10px, 3vw, 12px);
+    background: rgba(255,255,255,.03);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 10px;
+    margin-bottom: 8px;
+    transition: .15s;
+}
 
-// ============ АВТОСОХРАНЕНИЕ ============
-setInterval(save, 5000);
+.upgrade:hover { background: rgba(255,255,255,.06); }
+.upgrade.disabled { opacity: .4; }
 
-// ============ ИНИЦИАЛИЗАЦИЯ ============
-load();
-render();
-document.getElementById('tapButton').addEventListener('click', tap);
-updateRegenTimer();
+.upgrade-info { flex: 1; min-width: 0; }
+.upgrade-name { font-size: clamp(12px, 3.5vw, 14px); font-weight: 600; }
+.upgrade-desc { font-size: clamp(10px, 3vw, 11px); color: #888; margin-top: 2px; }
+
+.upgrade-buy {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    border: none;
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: clamp(11px, 3vw, 12px);
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.upgrade-buy:active { transform: scale(.95); }
+
+.floating {
+    position: fixed;
+    pointer-events: none;
+    font-size: clamp(20px, 6vw, 26px);
+    font-weight: 700;
+    color: #ffd700;
+    text-shadow: 0 0 12px rgba(255,215,0,.8);
+    animation: floatUp 1s ease-out forwards;
+    z-index: 999;
+}
+
+@keyframes floatUp {
+    0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    100% { transform: translate(-50%, -150%) scale(1.5); opacity: 0; }
+}
+
+/* ============ МОДАЛКА ============ */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.85);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 16px;
+}
+
+.modal-overlay.show { display: flex; }
+
+.modal {
+    background: linear-gradient(180deg, #1e1e2e 0%, #15151f 100%);
+    border: 1px solid rgba(255,255,255,.15);
+    border-radius: 20px;
+    padding: clamp(18px, 5vw, 24px);
+    width: 100%;
+    max-width: 340px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,.8);
+}
+
+.modal-icon {
+    font-size: clamp(44px, 14vw, 60px);
+    margin-bottom: 8px;
+    filter: drop-shadow(0 0 20px rgba(255,215,0,.6));
+}
+
+.modal h3 {
+    font-size: clamp(16px, 5vw, 20px);
+    color: #fff;
+    margin-bottom: 10px;
+}
+
+.modal p {
+    font-size: clamp(12px, 3.5vw, 13px);
+    color: #999;
+    line-height: 1.5;
+    margin-bottom: 20px;
+}
+
+.modal-btn-primary {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    border: none;
+    border-radius: 12px;
+    color: #fff;
+    font-weight: 800;
+    font-size: clamp(13px, 4vw, 15px);
+    cursor: pointer;
+    margin-bottom: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    box-shadow: 0 6px 20px rgba(245,158,11,.35);
+}
+
+.modal-btn-primary:active { transform: scale(.97); }
+
+.modal-btn-sub {
+    font-size: 11px;
+    font-weight: 500;
+    opacity: .85;
+}
+
+.modal-btn-secondary {
+    width: 100%;
+    padding: 12px;
+    background: rgba(255,255,255,.05);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 12px;
+    color: #aaa;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    margin-bottom: 12px;
+}
+
+.modal-btn-secondary:active { transform: scale(.97); }
+
+.modal-timer {
+    font-size: 11px;
+    color: #666;
+}
