@@ -1,143 +1,222 @@
-* { margin: 0; padding: 0; box-sizing: border-box; }
+// ============ СОСТОЯНИЕ ИГРЫ ============
+const state = {
+    coins: 0,
+    clickPower: 1,
+    maxEnergy: 1000,
+    energy: 1000,
+    upgrades: {
+        clickPower: 0,
+        maxEnergy: 0,
+        autoClick: 0
+    }
+};
 
-body {
-    font-family: -apple-system, 'Segoe UI', Arial, sans-serif;
-    background: linear-gradient(180deg, #1a1a2e 0%, #0f0f1a 100%);
-    color: #fff;
-    min-height: 100vh;
-    overflow-x: hidden;
-    user-select: none;
-    -webkit-tap-highlight-color: transparent;
+// ============ СПИСОК УЛУЧШЕНИЙ ============
+const UPGRADES = [
+    {
+        id: 'clickPower',
+        name: '💪 Сила клика',
+        desc: '+1 монета за клик',
+        baseCost: 100,
+        costMult: 1.5,
+        maxLevel: 100,
+        apply: (s) => s.clickPower += 1
+    },
+    {
+        id: 'maxEnergy',
+        name: '⚡ Резерв энергии',
+        desc: '+500 к максимуму',
+        baseCost: 200,
+        costMult: 1.6,
+        maxLevel: 50,
+        apply: (s) => { s.maxEnergy += 500; s.energy += 500; }
+    },
+    {
+        id: 'autoClick',
+        name: '🤖 Автоклик',
+        desc: '+1 монета в секунду',
+        baseCost: 500,
+        costMult: 1.8,
+        maxLevel: 100,
+        apply: () => {}
+    }
+];
+
+// ============ НАСТРОЙКИ БАЛАНСА ============
+const ENERGY_REGEN_SEC = 30;        // 1 энергия за 30 секунд
+const ENERGY_REGEN_TICK_MS = 1000;  // обновление раз в секунду
+
+// ============ СОХРАНЕНИЕ ============
+function save() {
+    localStorage.setItem('kc_clicker', JSON.stringify(state));
 }
 
-#app { max-width: 480px; margin: 0 auto; padding: 16px; }
-
-header {
-    background: rgba(255,255,255,.05);
-    border: 1px solid rgba(255,255,255,.1);
-    border-radius: 16px;
-    padding: 16px;
-    margin-bottom: 16px;
+function load() {
+    const data = localStorage.getItem('kc_clicker');
+    if (data) {
+        try { Object.assign(state, JSON.parse(data)); } catch {}
+    }
 }
 
-.balance {
-    font-size: 32px;
-    font-weight: 700;
-    text-align: center;
-    color: #ffd700;
-    margin-bottom: 8px;
-    text-shadow: 0 0 20px rgba(255,215,0,.3);
+// ============ ЦЕНА УЛУЧШЕНИЯ ============
+function getUpgradeCost(up) {
+    const level = state.upgrades[up.id] || 0;
+    return Math.floor(up.baseCost * Math.pow(up.costMult, level));
 }
 
-.coin-icon { font-size: 28px; }
+// ============ ПОКУПКА ============
+function buyUpgrade(up) {
+    const cost = getUpgradeCost(up);
+    const level = state.upgrades[up.id] || 0;
 
-.stats {
-    display: flex;
-    justify-content: space-around;
-    font-size: 13px;
-    color: #aaa;
+    if (level >= up.maxLevel) return;
+    if (state.coins < cost) return;
+
+    state.coins -= cost;
+    state.upgrades[up.id] = level + 1;
+    up.apply(state);
+
+    save();
+    render();
 }
 
-main {
-    display: flex;
-    justify-content: center;
-    margin: 24px 0;
+// ============ РЕНДЕР ============
+function render() {
+    document.getElementById('coins').textContent = formatNumber(state.coins);
+    document.getElementById('energy').textContent = Math.floor(state.energy);
+    document.getElementById('maxEnergy').textContent = state.maxEnergy;
+    document.getElementById('clickPower').textContent = state.clickPower;
+
+    const list = document.getElementById('upgradesList');
+    list.innerHTML = '';
+
+    for (const up of UPGRADES) {
+        const level = state.upgrades[up.id] || 0;
+        const cost = getUpgradeCost(up);
+        const canBuy = state.coins >= cost && level < up.maxLevel;
+
+        const el = document.createElement('div');
+        el.className = 'upgrade' + (canBuy ? '' : ' disabled');
+        el.innerHTML = `
+            <div class="upgrade-info">
+                <div class="upgrade-name">${up.name} (ур. ${level})</div>
+                <div class="upgrade-desc">${up.desc}</div>
+            </div>
+            <button class="upgrade-buy">${level >= up.maxLevel ? 'MAX' : formatNumber(cost) + ' 🪙'}</button>
+        `;
+
+        if (canBuy) {
+            el.querySelector('.upgrade-buy').onclick = () => buyUpgrade(up);
+        }
+
+        list.appendChild(el);
+    }
 }
 
-#tapButton {
-    width: 240px;
-    height: 240px;
-    border-radius: 50%;
-    background: radial-gradient(circle at 30% 30%, #4a4a8a, #1a1a3a);
-    border: 4px solid #5b5bff;
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    transition: transform .08s, box-shadow .2s;
-    box-shadow: 0 0 40px rgba(91,91,255,.4), inset 0 0 40px rgba(91,91,255,.2);
+// ============ ФОРМАТ ЧИСЕЛ ============
+function formatNumber(n) {
+    if (n < 1000) return Math.floor(n).toString();
+    if (n < 1e6) return (n / 1e3).toFixed(1) + 'K';
+    if (n < 1e9) return (n / 1e6).toFixed(1) + 'M';
+    if (n < 1e12) return (n / 1e9).toFixed(1) + 'B';
+    return (n / 1e12).toFixed(1) + 'T';
 }
 
-#tapButton:active {
-    transform: scale(.95);
-    box-shadow: 0 0 60px rgba(255,215,0,.6);
+// ============ КЛИК ============
+function tap(e) {
+    if (state.energy < 1) {
+        showEnergyModal();
+        return;
+    }
+
+    state.energy -= 1;
+    state.coins += state.clickPower;
+
+    const float = document.createElement('div');
+    float.className = 'floating';
+    float.textContent = '+' + state.clickPower;
+    const rect = e.currentTarget.getBoundingClientRect();
+    float.style.left = (e.clientX || rect.left + rect.width / 2) + 'px';
+    float.style.top = (e.clientY || rect.top + rect.height / 2) + 'px';
+    document.body.appendChild(float);
+    setTimeout(() => float.remove(), 1000);
+
+    save();
+    render();
 }
 
-.coin-big {
-    font-size: 100px;
-    filter: drop-shadow(0 0 20px rgba(255,215,0,.8));
-    pointer-events: none;
+// ============ МОДАЛКА ЭНЕРГИИ ============
+function showEnergyModal() {
+    document.getElementById('energyModal').classList.add('show');
 }
 
-.tap-hint {
-    font-size: 12px;
-    letter-spacing: 3px;
-    color: #aaa;
-    margin-top: 4px;
-    pointer-events: none;
+function hideEnergyModal() {
+    document.getElementById('energyModal').classList.remove('show');
 }
 
-#upgrades {
-    background: rgba(255,255,255,.03);
-    border: 1px solid rgba(255,255,255,.1);
-    border-radius: 16px;
-    padding: 16px;
+// Кнопка "Смотреть рекламу" (пока заглушка — потом AdsGram)
+document.getElementById('watchAdBtn').onclick = () => {
+    // TODO: здесь будет вызов AdsGram SDK
+    // Временная имитация: восстановить полную энергию
+    state.energy = state.maxEnergy;
+    save();
+    render();
+    hideEnergyModal();
+    alert('✅ Энергия восстановлена!\n\n(Позже здесь будет настоящая реклама)');
+};
+
+document.getElementById('closeModalBtn').onclick = hideEnergyModal;
+
+// Закрытие по клику вне окна
+document.getElementById('energyModal').addEventListener('click', (e) => {
+    if (e.target.id === 'energyModal') hideEnergyModal();
+});
+
+// ============ ТАЙМЕР ДО СЛЕДУЮЩЕЙ ЭНЕРГИИ ============
+let regenAccumulator = 0;
+
+function updateRegenTimer() {
+    if (state.energy >= state.maxEnergy) {
+        document.getElementById('regenTimer').textContent = 'полная';
+        return;
+    }
+    const remaining = Math.ceil(ENERGY_REGEN_SEC - regenAccumulator);
+    document.getElementById('regenTimer').textContent = remaining + 'с';
 }
 
-#upgrades h2 {
-    font-size: 16px;
-    margin-bottom: 12px;
-    color: #aaa;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
+// ============ ВОССТАНОВЛЕНИЕ ЭНЕРГИИ ============
+// 1 энергия за ENERGY_REGEN_SEC секунд (по умолчанию 30 сек)
+setInterval(() => {
+    if (state.energy >= state.maxEnergy) {
+        regenAccumulator = 0;
+        return;
+    }
 
-.upgrade {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px;
-    background: rgba(255,255,255,.03);
-    border: 1px solid rgba(255,255,255,.08);
-    border-radius: 10px;
-    margin-bottom: 8px;
-    transition: .15s;
-}
+    regenAccumulator += 1;
+    updateRegenTimer();
 
-.upgrade:hover { background: rgba(255,255,255,.06); }
+    if (regenAccumulator >= ENERGY_REGEN_SEC) {
+        state.energy = Math.min(state.maxEnergy, state.energy + 1);
+        regenAccumulator = 0;
+        save();
+        render();
+    }
+}, ENERGY_REGEN_TICK_MS);
 
-.upgrade.disabled { opacity: .4; }
+// ============ АВТОКЛИК ============
+setInterval(() => {
+    const level = state.upgrades.autoClick || 0;
+    if (level > 0) {
+        state.coins += level;
+        render();
+    }
+}, 1000);
 
-.upgrade-info { flex: 1; }
-.upgrade-name { font-size: 14px; font-weight: 600; }
-.upgrade-desc { font-size: 11px; color: #888; margin-top: 2px; }
+// ============ АВТОСОХРАНЕНИЕ ============
+setInterval(save, 5000);
 
-.upgrade-buy {
-    background: linear-gradient(135deg, #22c55e, #16a34a);
-    border: none;
-    color: #fff;
-    padding: 8px 14px;
-    border-radius: 8px;
-    font-weight: 700;
-    font-size: 12px;
-    cursor: pointer;
-    white-space: nowrap;
-}
-
-.upgrade-buy:active { transform: scale(.95); }
-
-.floating {
-    position: fixed;
-    pointer-events: none;
-    font-size: 24px;
-    font-weight: 700;
-    color: #ffd700;
-    animation: floatUp 1s ease-out forwards;
-    z-index: 999;
-}
-
-@keyframes floatUp {
-    0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-    100% { transform: translate(-50%, -150%) scale(1.5); opacity: 0; }
-}
+// ============ ИНИЦИАЛИЗАЦИЯ ============
+load();
+render();
+document.getElementById('tapButton').addEventListener('click', tap);
+updateRegenTimer();
