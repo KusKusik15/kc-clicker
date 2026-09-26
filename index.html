@@ -11,7 +11,7 @@
     <header>
         <div class="balance">
             <span id="coins">0</span>
-            <span class="coin-icon">🪙</span>
+            <span class="coin-icon">🏛️</span>
         </div>
         <div class="stats">
             <div>⚡ <span id="energy">1000</span>/<span id="maxEnergy">1000</span></div>
@@ -21,7 +21,7 @@
 
     <main>
         <button id="tapButton">
-            <div class="coin-big">🪙</div>
+            <div class="coin-big">🏛️</div>
             <div class="tap-hint">ТАПАЙ</div>
         </button>
     </main>
@@ -31,6 +31,23 @@
         <div id="upgradesList"></div>
     </section>
 </div>
+
+<div id="energyModal" class="modal-overlay">
+    <div class="modal">
+        <div class="modal-icon">⚡</div>
+        <h3>Энергия закончилась!</h3>
+        <p>Подожди немного или посмотри рекламу, чтобы сразу восстановить полный запас.</p>
+        <button id="watchAdBtn" class="modal-btn-primary">
+            📺 Смотреть рекламу
+            <span class="modal-btn-sub">+1000 энергии</span>
+        </button>
+        <button id="closeModalBtn" class="modal-btn-secondary">Подожду</button>
+        <div class="modal-timer">
+            До следующей ⚡: <span id="regenTimer">30с</span>
+        </div>
+    </div>
+</div>
+
 <script src="script.js"></script>
 </body>
 </html>
