@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>KC Clicker</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+    <header>
+        <div class="balance">
+            <span id="coins">0</span>
+            <span class="coin-icon">🪙</span>
+        </div>
+        <div class="stats">
+            <div>⚡ <span id="energy">1000</span>/<span id="maxEnergy">1000</span></div>
+            <div>💪 +<span id="clickPower">1</span> за клик</div>
+        </div>
+    </header>
+
+    <main>
+        <button id="tapButton">
+            <div class="coin-big">🪙</div>
+            <div class="tap-hint">ТАПАЙ</div>
+        </button>
+    </main>
+
+    <section id="upgrades">
+        <h2>Улучшения</h2>
+        <div id="upgradesList"></div>
+    </section>
+</div>
+<script src="script.js"></script>
+</body>
+</html>
