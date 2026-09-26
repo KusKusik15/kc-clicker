@@ -43,7 +43,7 @@ const UPGRADES = [
 ];
 
 // ============ НАСТРОЙКИ БАЛАНСА ============
-const ENERGY_REGEN_SEC = 30;   // 1 энергия за 30 секунд
+const ENERGY_REGEN_SEC = 30;
 
 // ============ СОХРАНЕНИЕ ============
 function save() {
@@ -53,7 +53,7 @@ function save() {
 function load() {
     const data = localStorage.getItem('kc_clicker');
     if (data) {
-        try { Object.assign(state, JSON.parse(data)); } catch {}
+        try { Object.assign(state, JSON.parse(data)); } catch (e) {}
     }
 }
 
@@ -96,13 +96,12 @@ function render() {
 
         const el = document.createElement('div');
         el.className = 'upgrade' + (canBuy ? '' : ' disabled');
-        el.innerHTML = `
-            <div class="upgrade-info">
-                <div class="upgrade-name">${up.name} (ур. ${level})</div>
-                <div class="upgrade-desc">${up.desc}</div>
-            </div>
-            <button class="upgrade-buy">${level >= up.maxLevel ? 'MAX' : formatNumber(cost) + ' G'}</button>
-        `;
+        el.innerHTML =
+            '<div class="upgrade-info">' +
+                '<div class="upgrade-name">' + up.name + ' (ур. ' + level + ')</div>' +
+                '<div class="upgrade-desc">' + up.desc + '</div>' +
+            '</div>' +
+            '<button class="upgrade-buy">' + (level >= up.maxLevel ? 'MAX' : formatNumber(cost) + ' G') + '</button>';
 
         if (canBuy) {
             el.querySelector('.upgrade-buy').onclick = () => buyUpgrade(up);
@@ -155,7 +154,6 @@ function hideEnergyModal() {
 }
 
 document.getElementById('watchAdBtn').onclick = () => {
-    // TODO: здесь будет AdsGram SDK
     state.energy = state.maxEnergy;
     save();
     render();
@@ -169,7 +167,7 @@ document.getElementById('energyModal').addEventListener('click', (e) => {
     if (e.target.id === 'energyModal') hideEnergyModal();
 });
 
-// ============ ТАЙМЕР ДО СЛЕДУЮЩЕЙ ЭНЕРГИИ ============
+// ============ ТАЙМЕР ЭНЕРГИИ ============
 let lastRegenTime = Date.now();
 
 function updateRegenTimer() {
@@ -187,7 +185,6 @@ function updateRegenTimer() {
 }
 
 // ============ ВОССТАНОВЛЕНИЕ ЭНЕРГИИ ============
-// 1 энергия за ENERGY_REGEN_SEC секунд (по умолчанию 30с)
 setInterval(() => {
     if (state.energy >= state.maxEnergy) {
         lastRegenTime = Date.now();
