@@ -26,7 +26,7 @@
                 <circle cx="32" cy="32" r="30" fill="url(#coinRim)"/>
                 <circle cx="32" cy="32" r="26" fill="url(#coinGrad)"/>
                 <circle cx="32" cy="32" r="22" fill="none" stroke="#b8860b" stroke-width="1.5" opacity="0.4"/>
-                <text x="32" y="41" text-anchor="middle" font-size="26" font-weight="900" fill="#8b6508" font-family="Arial">₲</text>
+                <text x="32" y="41" text-anchor="middle" font-size="26" font-weight="900" fill="#8b6508" font-family="Arial">G</text>
                 <ellipse cx="24" cy="20" rx="8" ry="4" fill="#fff" opacity="0.5"/>
             </svg>
         </div>
@@ -49,19 +49,12 @@
                         <stop offset="0%" stop-color="#d4a017"/>
                         <stop offset="100%" stop-color="#6b4e00"/>
                     </linearGradient>
-                    <filter id="coinGlow">
-                        <feGaussianBlur stdDeviation="4" result="blur"/>
-                        <feMerge>
-                            <feMergeNode in="blur"/>
-                            <feMergeNode in="SourceGraphic"/>
-                        </feMerge>
-                    </filter>
                 </defs>
-                <circle cx="100" cy="100" r="92" fill="url(#bigCoinRim)" filter="url(#coinGlow)"/>
+                <circle cx="100" cy="100" r="92" fill="url(#bigCoinRim)"/>
                 <circle cx="100" cy="100" r="82" fill="url(#bigCoinGrad)"/>
                 <circle cx="100" cy="100" r="68" fill="none" stroke="#8b6508" stroke-width="3" opacity="0.5"/>
                 <circle cx="100" cy="100" r="60" fill="none" stroke="#8b6508" stroke-width="1" opacity="0.3"/>
-                <text x="100" y="128" text-anchor="middle" font-size="90" font-weight="900" fill="#8b6508" font-family="Arial" opacity="0.85">₲</text>
+                <text x="100" y="128" text-anchor="middle" font-size="90" font-weight="900" fill="#8b6508" font-family="Arial" opacity="0.85">G</text>
                 <ellipse cx="75" cy="60" rx="25" ry="12" fill="#fff" opacity="0.5"/>
                 <ellipse cx="68" cy="55" rx="10" ry="5" fill="#fff" opacity="0.8"/>
             </svg>
@@ -75,7 +68,6 @@
     </section>
 </div>
 
-<!-- Модалка "Мало энергии" -->
 <div id="energyModal" class="modal-overlay">
     <div class="modal">
         <div class="modal-icon">⚡</div>
