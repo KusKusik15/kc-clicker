@@ -10,7 +10,7 @@ const state = {
         autoClick: 0
     },
     dailyStreak: 0,
-    lastDailyClaim: 0,
+    lastDailyClaim: 0,   // timestamp последнего получения
     clicksSinceCaptcha: 0,
     lastSaveTime: Date.now()
 };
@@ -48,9 +48,9 @@ const UPGRADES = [
 
 const ENERGY_REGEN_SEC = 30;
 const WITHDRAW_THRESHOLD = 100000;
-const DAY_MS = 24 * 60 * 60 * 1000;
 const OFFLINE_MAX_HOURS = 92;
 const CAPTCHA_EVERY = 300;
+const MSK_OFFSET_MS = 3 * 60 * 60 * 1000; // UTC+3
 
 const DAILY_REWARDS = [500, 1000, 2000, 3500, 5500, 8000, 12000];
 
@@ -119,9 +119,7 @@ function render() {
         list.appendChild(el);
     }
 
-    const dot = document.getElementById('dailyDot');
-    if (canClaimDaily()) dot.classList.add('show');
-    else dot.classList.remove('show');
+    updateDailyButton();
 
     const wBtn = document.getElementById('withdrawBtn');
     wBtn.disabled = state.coins < WITHDRAW_THRESHOLD;
@@ -138,13 +136,11 @@ function formatNumber(n) {
 
 // ============ КЛИК ============
 function tap(e) {
-    // Капча
     if (state.clicksSinceCaptcha >= CAPTCHA_EVERY) {
         showCaptcha();
         return;
     }
 
-    // Энергия: тратится = clickPower
     if (state.energy < state.clickPower) {
         showEnergyModal();
         return;
@@ -191,7 +187,6 @@ document.getElementById('energyModal').addEventListener('click', (e) => {
     if (e.target.id === 'energyModal') hideEnergyModal();
 });
 
-// ============ ТАЙМЕР ЭНЕРГИИ ============
 let lastRegenTime = Date.now();
 
 function updateRegenTimer() {
@@ -227,28 +222,103 @@ setInterval(() => {
     updateRegenTimer();
 }, 500);
 
-// ============ ЕЖЕДНЕВНЫЙ БОНУС ============
-function canClaimDaily() {
-    return (Date.now() - (state.lastDailyClaim || 0)) >= DAY_MS;
+// ============ ЕЖЕДНЕВНЫЙ БОНУС (00:00 МСК) ============
+
+// Возвращает дату по МСК в виде строки "YYYY-MM-DD"
+function getMskDateString(ts) {
+    const d = new Date((ts || Date.now()) + MSK_OFFSET_MS);
+    const y = d.getUTCFullYear();
+    const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(d.getUTCDate()).padStart(2, '0');
+    return y + '-' + m + '-' + day;
 }
 
+// Возвращает миллисекунды до следующего 00:00 МСК
+function msUntilNextMskMidnight() {
+    const nowMsk = Date.now() + MSK_OFFSET_MS;
+    const dayMs = 24 * 60 * 60 * 1000;
+    const nextMidnightMsk = (Math.floor(nowMsk / dayMs) + 1) * dayMs;
+    return nextMidnightMsk - nowMsk;
+}
+
+// Можно ли забрать бонус сегодня
+function canClaimDaily() {
+    if (!state.lastDailyClaim) return true;
+    return getMskDateString(state.lastDailyClaim) !== getMskDateString(Date.now());
+}
+
+// Стрик на сегодня
 function getDailyStreak() {
     if (!state.lastDailyClaim) return 1;
-    const daysPassed = Math.floor((Date.now() - state.lastDailyClaim) / DAY_MS);
-    if (daysPassed === 1) return Math.min(state.dailyStreak + 1, 7);
-    if (daysPassed === 0) return state.dailyStreak || 1;
+
+    const nowMsk = Date.now() + MSK_OFFSET_MS;
+    const lastMsk = state.lastDailyClaim + MSK_OFFSET_MS;
+    const dayMs = 24 * 60 * 60 * 1000;
+
+    const nowDay = Math.floor(nowMsk / dayMs);
+    const lastDay = Math.floor(lastMsk / dayMs);
+    const diffDays = nowDay - lastDay;
+
+    if (diffDays === 1) {
+        // Заходил вчера → стрик +1
+        return Math.min((state.dailyStreak || 0) + 1, 7);
+    }
+    if (diffDays === 0) {
+        // Уже забрал сегодня
+        return state.dailyStreak || 1;
+    }
+    // Пропустил хотя бы один день → сброс
     return 1;
 }
 
+// Таймер до следующего 00:00 МСК
+function formatTimeRemaining(ms) {
+    const totalSec = Math.floor(ms / 1000);
+    const h = Math.floor(totalSec / 3600);
+    const m = Math.floor((totalSec % 3600) / 60);
+    const s = totalSec % 60;
+
+    if (h > 0) return h + 'ч ' + m + 'м';
+    if (m > 0) return m + 'м ' + s + 'с';
+    return s + 'с';
+}
+
+// Обновление текста и точки на кнопке ежедневки
+function updateDailyButton() {
+    const btn = document.getElementById('dailyBtn');
+    const dot = document.getElementById('dailyDot');
+    if (!btn || !dot) return;
+
+    if (canClaimDaily()) {
+        btn.innerHTML = '🎁 Ежедневный бонус <span id="dailyDot" class="dot show"></span>';
+        btn.disabled = false;
+    } else {
+        const ms = msUntilNextMskMidnight();
+        btn.innerHTML = '⏳ Доступно через ' + formatTimeRemaining(ms) +
+                         ' <span id="dailyDot" class="dot"></span>';
+        btn.disabled = false; // можно открыть модалку, но там не забрать
+    }
+}
+
+// Обновляем таймер каждую секунду
+setInterval(updateDailyButton, 1000);
+
+// Модалка
 function showDailyModal() {
     const streak = getDailyStreak();
     const canClaim = canClaimDaily();
     const currentDay = canClaim ? streak : (state.dailyStreak || 1);
 
     document.getElementById('dailyTitle').textContent =
-        canClaim ? 'Забрать бонус!' : 'Уже получен!';
-    document.getElementById('dailyDesc').textContent =
-        canClaim ? 'Заходи каждый день — награда растёт!' : 'Возвращайся завтра за новым бонусом';
+        canClaim ? 'Забрать бонус!' : 'Бонус уже получен';
+
+    if (canClaim) {
+        document.getElementById('dailyDesc').textContent = 'Заходи каждый день — награда растёт!';
+    } else {
+        const ms = msUntilNextMskMidnight();
+        document.getElementById('dailyDesc').textContent =
+            'Следующий бонус через ' + formatTimeRemaining(ms) + ' (в 00:00 МСК)';
+    }
 
     const daysContainer = document.getElementById('dailyDays');
     daysContainer.innerHTML = '';
@@ -316,13 +386,9 @@ function checkOfflineIncome() {
     const elapsedMs = now - lastSave;
     const elapsedHours = elapsedMs / (1000 * 60 * 60);
 
-    // Ограничиваем максимум 92 часа
     const hours = Math.min(elapsedHours, OFFLINE_MAX_HOURS);
-
-    // 1 монета за час за каждый уровень автоклика
     const earned = Math.floor(autoLevel * hours);
 
-    // Только если прошло больше 1 минуты офлайна и есть что забрать
     if (earned > 0 && elapsedMs > 60 * 1000) {
         document.getElementById('offlineAmount').textContent = formatNumber(earned);
         document.getElementById('offlineModal').classList.add('show');
@@ -361,7 +427,6 @@ function showCaptcha() {
     document.getElementById('captchaQuestion').textContent = question;
     document.getElementById('captchaError').textContent = '';
 
-    // 4 варианта ответа: правильный + 3 случайных
     const variants = new Set([answer]);
     while (variants.size < 4) {
         const delta = Math.floor(Math.random() * 10) - 5;
@@ -387,7 +452,6 @@ function showCaptcha() {
             } else {
                 btn.classList.add('wrong');
                 document.getElementById('captchaError').textContent = 'Неверно! Попробуй ещё.';
-                // Показать новую капчу через 1.5 сек
                 setTimeout(() => {
                     showCaptcha();
                 }, 1500);
@@ -419,9 +483,9 @@ setInterval(save, 5000);
 // ============ ИНИЦИАЛИЗАЦИЯ ============
 load();
 
-// Проверка оффлайн-дохода — до рендера
 setTimeout(checkOfflineIncome, 500);
 
 render();
 document.getElementById('tapButton').addEventListener('click', tap);
 updateRegenTimer();
+updateDailyButton();
