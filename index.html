@@ -36,6 +36,13 @@
         </div>
     </header>
 
+    <div class="top-buttons">
+        <button id="dailyBtn" class="top-btn">
+            <span>🎁</span> Ежедневный бонус
+            <span id="dailyDot" class="dot"></span>
+        </button>
+    </div>
+
     <main>
         <button id="tapButton">
             <svg class="coin-big-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
@@ -62,6 +69,15 @@
         </button>
     </main>
 
+    <div class="withdraw-block">
+        <button id="withdrawBtn" class="withdraw-btn" disabled>
+            💎 Вывести в KC Зона
+        </button>
+        <div class="withdraw-hint">
+            Минимум: <b>100 000 G</b>
+        </div>
+    </div>
+
     <section id="upgrades">
         <h2>Улучшения</h2>
         <div id="upgradesList"></div>
@@ -81,6 +97,53 @@
         <div class="modal-timer">
             До следующей ⚡: <span id="regenTimer">30с</span>
         </div>
+    </div>
+</div>
+
+<div id="dailyModal" class="modal-overlay">
+    <div class="modal">
+        <div class="modal-icon">🎁</div>
+        <h3 id="dailyTitle">Ежедневный бонус</h3>
+        <p id="dailyDesc">Заходи каждый день — награда растёт!</p>
+        <div class="daily-days" id="dailyDays"></div>
+        <button id="claimDailyBtn" class="modal-btn-primary">
+            Забрать <span id="dailyAmount">500</span> G
+        </button>
+        <button id="closeDailyBtn" class="modal-btn-secondary">Закрыть</button>
+    </div>
+</div>
+
+<div id="offlineModal" class="modal-overlay">
+    <div class="modal">
+        <div class="modal-icon">💤</div>
+        <h3>Пока тебя не было...</h3>
+        <p id="offlineDesc">Автоклик накопил монеты!</p>
+        <div class="offline-amount">
+            +<span id="offlineAmount">0</span> G
+        </div>
+        <button id="claimOfflineBtn" class="modal-btn-primary">Забрать</button>
+    </div>
+</div>
+
+<div id="captchaModal" class="modal-overlay">
+    <div class="modal">
+        <div class="modal-icon">🤖</div>
+        <h3>Докажи, что ты человек</h3>
+        <p id="captchaQuestion">Сколько будет 5 + 3?</p>
+        <div id="captchaAnswers" class="captcha-answers"></div>
+        <p id="captchaError" class="captcha-error"></p>
+    </div>
+</div>
+
+<div id="withdrawModal" class="modal-overlay">
+    <div class="modal">
+        <div class="modal-icon">💎</div>
+        <h3>Вывод в KC Зона</h3>
+        <p>Скоро здесь можно будет обменять игровые монеты на голду в реальной игре!</p>
+        <p style="font-size:12px;color:#666;margin-bottom:16px;">
+            Функция в разработке. Минимум: <b>100 000 G</b>
+        </p>
+        <button id="closeWithdrawBtn" class="modal-btn-secondary">Понятно</button>
     </div>
 </div>
 
